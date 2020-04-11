@@ -1,0 +1,19 @@
+.titlebar{
+	-fx-background-color: #414141;
+}
+
+.close-button {
+	-fx-fill: rgb(240,71,71);
+}
+
+.close-button:hover {
+	-fx-fill: rgb(217,50,71);
+}
+
+.hide-button {
+	-fx-fill: rgb(250,166,26);
+}
+
+.hide-button:hover {
+	-fx-fill: rgb(232,139,0);
+}

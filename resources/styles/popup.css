@@ -1,0 +1,37 @@
+.my-popup {
+	-fx-background-color: rgba(0,0,0, 0.5);
+}
+
+.popup-error {
+	-fx-background-color: #f44336;
+}
+
+.title {
+	-fx-font-size: 22px;
+	-fx-fill: #EEEEEE; 
+}
+
+.message {
+	-fx-font-size: 16px;	
+	-fx-fill: #EEEEEE;
+}
+
+.popup-success {
+	-fx-background-color: #4CAF50;
+}
+
+.popup-info {
+	-fx-background-color: #2196F3;
+}
+
+.popup-warning {
+	-fx-background-color: #ff9800;
+}
+
+.close-button {
+	-fx-fill: rgb(240,71,71);
+}
+
+.close-button:hover {
+	-fx-fill: rgb(217,50,71);
+}

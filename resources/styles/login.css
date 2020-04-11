@@ -1,0 +1,33 @@
+.login {
+	-fx-background-color: #131312;
+}
+
+.login-pane {
+	-fx-background-color: #262626;
+}
+
+.login-text {
+	-fx-font-size: 28px;
+	-fx-fill: #EEEEEE;
+}
+
+.jfx-text-field, .jfx-password-field {
+    -fx-prompt-text-fill: rgba(66,68,63,120);
+    -fx-text-fill: #EEEEEE;
+    -jfx-focus-color: #EEEEEE;
+    -jfx-unfocus-color: #6B6969;
+}
+
+.jfx-button {
+	-fx-background-color: #42443F;
+	-fx-text-fill: #EEEEEE;
+}
+
+.jfx-button .jfx-rippler{
+	-jfx-rippler-fill: #262626;
+}
+
+
+.jfx-check-box {
+	-fx-text-fill: #FFFFFF;
+}
