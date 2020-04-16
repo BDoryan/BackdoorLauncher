@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>isotopestudio.backdoor.launcher</groupId>
 	<artifactId>backdoorlauncher</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>BackdoorLauncher</name>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
@@ -29,7 +29,7 @@
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
-							<mainClass>isotopestudio.backdoor.game.BackdoorGame</mainClass>
+							<mainClass>isotopestudio.backdoor.launcher.LauncherApplication</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
@@ -38,7 +38,7 @@
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>3.2.0</version>
 				<configuration>
-					<finalName>backdoor</finalName>
+					<finalName>launcher</finalName>
 					<appendAssemblyId>false</appendAssemblyId>
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
@@ -75,6 +75,11 @@
 		<dependency>
 			<groupId>doryanbessiere.isotopestudio.api</groupId>
 			<artifactId>isotopestudioapi</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>doryanbessiere.mbd</groupId>
+			<artifactId>MavenBuildDeploy</artifactId>
 			<version>1.0.0</version>
 		</dependency>
 		<dependency>

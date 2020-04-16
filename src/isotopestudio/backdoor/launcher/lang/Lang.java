@@ -9,6 +9,7 @@ import java.util.HashMap;
 
 import javax.swing.JOptionPane;
 
+import doryanbessiere.isotopestudio.api.IsotopeStudioAPI;
 import isotopestudio.backdoor.launcher.LauncherApplication;
 
 public class Lang {
@@ -54,7 +55,7 @@ public class Lang {
 		} catch (IOException e) {
 			e.printStackTrace();
 			JOptionPane.showMessageDialog(null, "The language file ["+name+"] could not be read!", "Fatal error", JOptionPane.ERROR_MESSAGE);
-			LauncherApplication.APPLICATION.exit(LauncherApplication.CRASH);;
+			LauncherApplication.APPLICATION.exit(IsotopeStudioAPI.EXIT_CODE_CRASH);
 		}
 		return false;
 	}

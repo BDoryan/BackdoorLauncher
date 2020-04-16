@@ -5,7 +5,6 @@ import java.awt.MouseInfo;
 import com.jfoenix.controls.JFXButton;
 
 import isotopestudio.backdoor.launcher.interfaces.Interface;
-import isotopestudio.backdoor.launcher.lang.Lang;
 import isotopestudio.backdoor.launcher.popup.PopupType;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -18,7 +17,13 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundImage;
+import javafx.scene.layout.BackgroundPosition;
+import javafx.scene.layout.BackgroundRepeat;
+import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
@@ -130,11 +135,42 @@ public class LauncherFrame {
 			};
 		});
 
+		Pane disconnectButton = new Pane();
+		disconnectButton.setMinWidth(20);
+		disconnectButton.setMinHeight(20);
+		
+		ImageView disconnectImage = new ImageView(new Image(LauncherApplication.getResource("/images/icons/logout.png")));
+		disconnectImage.setFitWidth(20);
+		disconnectImage.setFitHeight(20);
+		
+		disconnectButton.getChildren().add(disconnectImage);
+
+		disconnectButton.setOnMouseEntered(new EventHandler<MouseEvent>() {
+			public void handle(MouseEvent event) {
+				scene.setCursor(Cursor.HAND);
+			};
+		});
+
+		disconnectButton.setOnMouseExited(new EventHandler<MouseEvent>() {
+			public void handle(MouseEvent event) {
+				scene.setCursor(Cursor.DEFAULT);
+			};
+		});
+
+		disconnectButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
+			public void handle(MouseEvent event) {
+				LauncherApplication.disconnect();
+			};
+		});
+
 		AnchorPane.setTopAnchor(close, 8D);
 		AnchorPane.setRightAnchor(close, 8D);
 
 		AnchorPane.setTopAnchor(hide, 8D);
 		AnchorPane.setRightAnchor(hide, 30D);
+
+		AnchorPane.setTopAnchor(disconnectButton, 6D);
+		AnchorPane.setRightAnchor(disconnectButton, 50D);
 
 		pane.setOnMousePressed(event);
 		pane.setOnMouseReleased(event);
@@ -143,6 +179,7 @@ public class LauncherFrame {
 		root.getChildren().add(pane);
 		pane.getChildren().add(close);
 		pane.getChildren().add(hide);
+		pane.getChildren().add(disconnectButton);
 	}
 
 	public void popup(PopupType type, String title, String message) {
@@ -157,7 +194,7 @@ public class LauncherFrame {
 		AnchorPane.setLeftAnchor(popup, 0D);
 
 		BorderPane popup_box = new BorderPane();
-		
+
 		popup_box.setPrefWidth(200);
 		popup_box.getStyleClass().add(type.getClassStyle());
 		popup_box.setPadding(new Insets(10, 10, 10, 10));
@@ -166,8 +203,8 @@ public class LauncherFrame {
 		close.setFitHeight(13);
 		close.setFitWidth(13);
 		close.getStyleClass().add("close-button");
-		
-		popup_box.setMargin(close, new Insets(5,0,0,10));
+
+		popup_box.setMargin(close, new Insets(5, 0, 0, 10));
 
 		close.setOnMouseEntered(new EventHandler<MouseEvent>() {
 			public void handle(MouseEvent event) {
@@ -191,7 +228,7 @@ public class LauncherFrame {
 		title_text.setFont(ResourceManager.getFont(10));
 		title_text.setSmooth(true);
 		title_text.getStyleClass().add("title");
-		
+
 		Text message_text = new Text(message);
 		message_text.setFont(ResourceManager.getFont(10));
 		message_text.getStyleClass().add("message");
@@ -200,15 +237,14 @@ public class LauncherFrame {
 		title_text.applyCss();
 		message_text.applyCss();
 
-		popup_box.setMaxWidth(
-				message_text.getBoundsInLocal().getWidth() > title_text.getBoundsInLocal().getWidth()
+		popup_box.setMaxWidth(message_text.getBoundsInLocal().getWidth() > title_text.getBoundsInLocal().getWidth()
 				? message_text.getBoundsInLocal().getWidth()
 				: title_text.getBoundsInLocal().getWidth());
 
 		popup_box.setRight(close);
 		popup_box.setLeft(title_text);
 		popup_box.setBottom(message_text);
-		
+
 		popup.getChildren().add(popup_box);
 		root.getChildren().add(popup);
 	}

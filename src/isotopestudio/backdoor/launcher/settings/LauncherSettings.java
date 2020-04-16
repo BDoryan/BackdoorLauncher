@@ -27,7 +27,7 @@ public class LauncherSettings {
 		return new File(LauncherApplication.localDirectory(), NAME);
 	}
 
-	public static LauncherSettings getGameSettings() {
+	public static LauncherSettings getSettings() {
 		File target = getFileLauncherSettings();
 		if (target.exists() && !target.isFile()) {
 			if (!target.delete()) {

@@ -1,9 +1,13 @@
 package isotopestudio.backdoor.launcher.interfaces;
 
+import java.awt.Desktop;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.client.ClientProtocolException;
-import org.codehaus.plexus.util.ExceptionUtils;
 
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXCheckBox;
@@ -14,11 +18,13 @@ import com.jfoenix.controls.JFXTextField;
 import doryanbessiere.isotopestudio.api.IsotopeStudioAPI;
 import doryanbessiere.isotopestudio.api.authentification.AuthClient;
 import doryanbessiere.isotopestudio.api.authentification.Response;
-import doryanbessiere.isotopestudio.api.authentification.User;
+import doryanbessiere.isotopestudio.api.news.News;
 import isotopestudio.backdoor.launcher.LauncherApplication;
 import isotopestudio.backdoor.launcher.ResourceManager;
 import isotopestudio.backdoor.launcher.lang.Lang;
 import isotopestudio.backdoor.launcher.popup.PopupType;
+import isotopestudio.backdoor.launcher.settings.LauncherSettings;
+import javafx.animation.ScaleTransition;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -28,26 +34,44 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.util.Duration;
 
 public class LoginInterface extends AnchorPane implements Interface {
 
 	private AnchorPane login_pane;
-	private JFXProgressBar progressbar;
-	private User user;
+	private AnchorPane news_pane;
+	
+	private JFXButton login_button;
 
-	public User getUser() {
-		return user;
+	private JFXTextField email_field;
+	private JFXPasswordField password_field;
+	private JFXCheckBox stay_connected_checkbox;
+
+	private JFXProgressBar progressbar;
+
+	private VBox progress_text_box;
+	private Text progress_text;
+
+	public JFXButton getLoginButton() {
+		return login_button;
 	}
 
-	public boolean isConnected() {
-		return this.user != null;
+	public VBox getProgressBox() {
+		return progress_text_box;
+	}
+
+	public Text getProgressText() {
+		return progress_text;
 	}
 
 	public LoginInterface() {
 		getStylesheets().add("styles/login.css");
+		getStylesheets().add("styles/news.css");
 		getStyleClass().add("login");
 
 		this.login_pane = new AnchorPane();
@@ -87,28 +111,28 @@ public class LoginInterface extends AnchorPane implements Interface {
 
 		vbox.getChildren().add(text);
 
-		JFXTextField email_field = new JFXTextField();
+		email_field = new JFXTextField();
 		email_field.setMinHeight(20D);
 		email_field.setMaxWidth(280);
-		email_field.setFont(ResourceManager.getFont(16));
+		email_field.setFont(email_field.getFont().font(16D));
 		email_field.setPromptText(Lang.get("email"));
 
 		vbox.getChildren().add(email_field);
 
-		JFXPasswordField password_field = new JFXPasswordField();
+		password_field = new JFXPasswordField();
 		password_field.setMinHeight(20D);
 		password_field.setMaxWidth(280);
-		password_field.setFont(ResourceManager.getFont(16));
+		password_field.setFont(password_field.getFont().font(16D));
 		password_field.setPromptText(Lang.get("password"));
 
 		vbox.getChildren().add(password_field);
 
-		JFXCheckBox stay_connected_checkbox = new JFXCheckBox(Lang.get("stay_connected"));
-		stay_connected_checkbox.setFont(ResourceManager.getFont(16));
+		stay_connected_checkbox = new JFXCheckBox(Lang.get("stay_connected"));
+		stay_connected_checkbox.setFont(stay_connected_checkbox.getFont().font(16D));
 
 		vbox.getChildren().add(stay_connected_checkbox);
 
-		JFXButton login_button = new JFXButton(Lang.get("login"));
+		login_button = new JFXButton(Lang.get("login"));
 		login_button.setMinHeight(60);
 		login_button.setMinWidth(240);
 		login_button.setFont(ResourceManager.getFont(18));
@@ -123,12 +147,12 @@ public class LoginInterface extends AnchorPane implements Interface {
 					return;
 				login_button.setDisable(true);
 
-				AuthClient authClient = new AuthClient(IsotopeStudioAPI.API_URL+"/");
+				AuthClient authClient = new AuthClient(IsotopeStudioAPI.API_URL + "/");
 				new Thread(new Runnable() {
 					@Override
 					public void run() {
-						if (isConnected()) {
-							LauncherApplication.launch(user);
+						if (LauncherApplication.isAuthentified()) {
+							LauncherApplication.launch(LauncherApplication.getUser());
 						} else {
 							in_process = true;
 
@@ -141,10 +165,9 @@ public class LoginInterface extends AnchorPane implements Interface {
 										@Override
 										public void run() {
 											if (response.getPath().equals("success")) {
-												user = new User("" + response.getInformations().get("username"),
-														"" + response.getInformations().get("email"),
-														"" + response.getInformations().get("token"));
-												login_button.setText(Lang.get("run_the_game"));
+												LauncherApplication.setAuthentification(response.getInformations());
+												email_field.setDisable(true);
+												password_field.setDisable(true);
 											} else {
 												LauncherApplication.APPLICATION.getLauncherFrame().popup(
 														PopupType.ERROR, Lang.get("account_login_error"),
@@ -182,14 +205,14 @@ public class LoginInterface extends AnchorPane implements Interface {
 									@Override
 									public void run() {
 										LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR,
-												Lang.get("account_login_error"),
-												Lang.get("the_text_fields_are_empty"));
+												Lang.get("account_login_error"), Lang.get("the_text_fields_are_empty"));
 									};
 								});
 							}
 							in_process = false;
 						}
 						login_button.setDisable(false);
+
 					}
 
 				}).start();
@@ -206,24 +229,239 @@ public class LoginInterface extends AnchorPane implements Interface {
 		this.progressbar = new JFXProgressBar();
 		this.progressbar.setMinHeight(20D);
 		this.progressbar.setProgress(0D);
-		
+
 		AnchorPane.setLeftAnchor(this.progressbar, 410D);
 		AnchorPane.setBottomAnchor(this.progressbar, 10D);
 		AnchorPane.setRightAnchor(this.progressbar, 20D);
-		
+
 		this.getChildren().add(this.progressbar);
+
+		this.progress_text = new Text("");
+		this.progress_text.setStyle("-fx-text-fill: white;");
+
+		this.progress_text_box = new VBox();
+		this.progress_text_box.setMinHeight(20D);
+		this.progress_text_box.setAlignment(Pos.CENTER_LEFT);
+
+		AnchorPane.setLeftAnchor(this.progress_text_box, 415D);
+		AnchorPane.setBottomAnchor(this.progress_text_box, 10D);
+		AnchorPane.setRightAnchor(this.progress_text_box, 20D);
+
+		this.progress_text_box.getChildren().add(this.progress_text);
+
+		this.getChildren().add(this.progress_text_box);
+
+		this.news_pane = new AnchorPane();
+
+		AnchorPane.setLeftAnchor(this.news_pane, 410D);
+		AnchorPane.setBottomAnchor(this.news_pane, 40D);
+		AnchorPane.setRightAnchor(this.news_pane, 20D);
+		AnchorPane.setTopAnchor(this.news_pane, 20D);
+		
+		this.getChildren().add(this.news_pane);
+		
+		addNews();
 	}
 
-	public JFXProgressBar getProgressbar(){
+	public JFXProgressBar getProgressbar() {
 		return this.progressbar;
 	}
-	
+
 	@Override
 	public void load() {
+		Platform.runLater(new Runnable() {
+			@Override
+			public void run() {
+				LauncherSettings settings = LauncherSettings.getSettings();
+				if (settings.email != null && !settings.email.equalsIgnoreCase("") && settings.token != null
+						&& !settings.token.equalsIgnoreCase("")) {
+
+					stay_connected_checkbox.setSelected(true);
+					AuthClient authClient = new AuthClient(IsotopeStudioAPI.API_URL + "/");
+					try {
+						Response response = authClient.loginToken(settings.email, settings.token);
+						if (response.getPath().equals("success")) {
+							LauncherApplication.setAuthentification(response.getInformations());
+						} else {
+							LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR,
+									Lang.get("account_login_error"), Lang.get("authentification_failed"));
+
+						}
+					} catch (ClientProtocolException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			};
+		});
 	}
 
 	@Override
 	public Pane getContent() {
 		return this;
 	}
-}
+
+	public JFXCheckBox getSaveAuthCheckbox() {
+		return stay_connected_checkbox;
+	}
+
+	public JFXTextField getEmailField() {
+		return email_field;
+	}
+
+	public JFXPasswordField getPasswordField() {
+		return password_field;
+	}
+
+	private void addNews() {
+		News[] news = LauncherApplication.news();
+		
+		AnchorPane news_1 = new AnchorPane();
+		news_1.getStyleClass().add("news");
+		news_1.setMinHeight(320);
+		if(news.length > 0 && news[0] != null){
+			news_1.getChildren().add(title(news[0].getTitle(), news[0].getSubtitle(), news[0].getDate()));
+			news_1.setOnMouseClicked(new EventHandler<MouseEvent>() {
+				@Override
+				public void handle(MouseEvent event) {
+					try {
+						Desktop.getDesktop().browse(new URI(news[0].getUrl()));
+					} catch (IOException e) {
+						e.printStackTrace();
+					} catch (URISyntaxException e) {
+						e.printStackTrace();
+					}
+				}
+			});
+		}
+		
+		VBox vBox = new VBox(10);
+
+		AnchorPane.setLeftAnchor(vBox, 0D);
+		AnchorPane.setRightAnchor(vBox, 0D);
+		AnchorPane.setTopAnchor(vBox, 0D);
+		AnchorPane.setBottomAnchor(vBox, 0D);
+		
+		vBox.getChildren().add(news_1);
+		
+		HBox hBox = new HBox(10);
+
+		AnchorPane news_2 = new AnchorPane();
+		news_2.setMinHeight(200);
+		news_2.setMinWidth(355);
+		news_2.getStyleClass().add("news");
+		if(news.length > 1 && news[1] != null){
+			news_2.getChildren().add(title(news[1].getTitle(), news[1].getSubtitle(), news[1].getDate()));
+			news_2.setOnMouseClicked(new EventHandler<MouseEvent>() {
+				@Override
+				public void handle(MouseEvent event) {
+					try {
+						Desktop.getDesktop().browse(new URI(news[1].getUrl()));
+					} catch (IOException e) {
+						e.printStackTrace();
+					} catch (URISyntaxException e) {
+						e.printStackTrace();
+					}
+				}
+			});
+		}
+
+		AnchorPane news_3 = new AnchorPane();
+		news_3.setMinHeight(200);
+		news_3.getStyleClass().add("news");
+		news_3.setMinWidth(355);
+		if(news.length > 2 && news[2] != null){
+			news_3.getChildren().add(title(news[2].getTitle(), news[2].getSubtitle(), news[2].getDate()));
+			news_3.setOnMouseClicked(new EventHandler<MouseEvent>() {
+				@Override
+				public void handle(MouseEvent event) {
+					try {
+						Desktop.getDesktop().browse(new URI(news[2].getUrl()));
+					} catch (IOException e) {
+						e.printStackTrace();
+					} catch (URISyntaxException e) {
+						e.printStackTrace();
+					}
+				}
+			});
+		}
+
+		animation(news_1);
+		animation(news_2);
+		animation(news_3);
+		
+		hBox.getChildren().add(news_2);
+		hBox.getChildren().add(news_3);
+		
+		vBox.getChildren().add(hBox);
+		
+		this.news_pane.getChildren().add(vBox);
+	}
+	
+	private VBox title(String title, String  subtitle, long date) {
+		VBox vbox = new VBox(0);
+		vbox.setAlignment(Pos.BOTTOM_LEFT);
+		
+		vbox.setPadding(new Insets(10,10,10,10));
+
+		DropShadow dropShadow = new DropShadow();
+		dropShadow.setRadius(5.0);
+		dropShadow.setOffsetX(1.90);
+		dropShadow.setOffsetY(1.90);
+		dropShadow.setColor(Color.BLACK);
+		
+		Text title_text = new Text(title);
+		title_text.setFont(ResourceManager.getFont(22));
+		title_text.setStyle("-fx-fill: #FFFFFF;");
+		title_text.setEffect(dropShadow);
+		
+		Text subtitle_text = new Text(subtitle);
+		subtitle_text.setFont(ResourceManager.getFont(16));
+		subtitle_text.setStyle("-fx-fill: #FFFFFF;");
+		subtitle_text.setEffect(dropShadow);
+		
+		Text date_text = new Text(new SimpleDateFormat("dd/MM/yyyy HH:mm").format(date));
+		date_text.setFont(ResourceManager.getFont(16));
+		date_text.setStyle("-fx-fill: #FFFFFF;");
+		date_text.setEffect(dropShadow);
+
+		vbox.getChildren().add(title_text);
+		vbox.getChildren().add(subtitle_text);
+		vbox.getChildren().add(date_text);
+		
+		AnchorPane.setLeftAnchor(vbox, 0D);
+		AnchorPane.setBottomAnchor(vbox, 0D);
+		
+		return vbox;
+	}
+	
+	private void animation(AnchorPane pane) {
+		ScaleTransition enterTransition = new ScaleTransition(Duration.millis(100), pane);
+		ScaleTransition exitTransition = new ScaleTransition(Duration.millis(100), pane);
+		
+		pane.setOnMouseEntered(new EventHandler<MouseEvent>() {
+			public void handle(MouseEvent event) {
+				exitTransition.stop();
+				
+				enterTransition.setFromX(getScaleX());
+				enterTransition.setFromY(getScaleY());
+				enterTransition.setToX(1.025);
+				enterTransition.setToY(1.025);
+				enterTransition.playFromStart();
+			};
+		});
+		
+		pane.setOnMouseExited(new EventHandler<MouseEvent>() {
+			public void handle(MouseEvent event) {
+				enterTransition.stop();
+
+				exitTransition.setFromX(1.025);
+                exitTransition.setFromY(1.025);
+                exitTransition.setToX(getScaleX());
+                exitTransition.setToY(getScaleY());
+                exitTransition.playFromStart();
+			};
+		});	
+	}
+	}
