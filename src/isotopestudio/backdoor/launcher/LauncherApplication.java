@@ -26,12 +26,14 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import doryanbessiere.isotopestudio.api.Game;
-import doryanbessiere.isotopestudio.api.GsonInstance;
 import doryanbessiere.isotopestudio.api.IsotopeStudioAPI;
 import doryanbessiere.isotopestudio.api.authentification.User;
 import doryanbessiere.isotopestudio.api.news.News;
 import doryanbessiere.isotopestudio.api.updater.IUpdater;
 import doryanbessiere.isotopestudio.api.updater.Updater;
+import doryanbessiere.isotopestudio.commons.GsonInstance;
+import doryanbessiere.isotopestudio.commons.logger.Logger;
+import doryanbessiere.isotopestudio.commons.logger.file.LoggerFile;
 import isotopestudio.backdoor.launcher.interfaces.Interface;
 import isotopestudio.backdoor.launcher.interfaces.LoginInterface;
 import isotopestudio.backdoor.launcher.lang.Lang;
@@ -44,10 +46,10 @@ import javafx.stage.Stage;
 
 public class LauncherApplication extends Application {
 
-	public static final String APP_VERSION = "1.0.0";
-	public static final String AUTH_SERVER = "http://77.144.207.27/backdoor/server/api/";
+	public static final String APP_VERSION = "1.0.3";
 
 	public static LauncherApplication APPLICATION;
+	public static Logger LOGGER;
 	public static User user;
 
 	public static User getUser() {
@@ -71,6 +73,7 @@ public class LauncherApplication extends Application {
 	@Override
 	public void start(Stage stage) throws Exception {
 		APPLICATION = this;
+		LOGGER = new Logger("BackdoorLauncher", new LoggerFile(new File(localDirectory(), "logs")));
 
 		loadApplication();
 
@@ -82,7 +85,7 @@ public class LauncherApplication extends Application {
 
 		Properties launcher_properties = new Properties();
 		try {
-			launcher_properties.load(new URL("http://77.144.207.27/launcher/launcher.properties").openStream());
+			launcher_properties.load(new URL("https://isotope-studio.fr/launcher/launcher.properties").openStream());
 			if (!launcher_properties.get("version").equals(APP_VERSION)) {
 				new Thread(new Runnable() {
 					@Override
@@ -96,40 +99,33 @@ public class LauncherApplication extends Application {
 									((LoginInterface) Interface.LOGIN).getPasswordField().setDisable(true);
 								}
 							});
-							HttpClient client = HttpClientBuilder.create().build();
-							HttpGet request = new HttpGet("http://77.144.207.27/launcher/BackdoorLauncherSetup.exe");
-							HttpResponse response = client.execute(request);
-							HttpEntity entity = response.getEntity();
+					HttpClient client = HttpClientBuilder.create().build();
+					HttpGet request = new HttpGet(
+							"https://isotope-studio.fr/launcher/BackdoorLauncherSetup.exe");
+					HttpResponse response = client.execute(request);
+					HttpEntity entity = response.getEntity();
 
-							InputStream is = entity.getContent();
+					InputStream is = entity.getContent();
 
-							String tempDir = System.getProperty("java.io.tmpdir");
+					String tempDir = System.getProperty("java.io.tmpdir");
 
-							File setup_file = new File(tempDir, "BackdoorLauncherSetup.exe");
-							setup_file.createNewFile();
+					File setup_file = new File(tempDir, "BackdoorLauncherSetup.exe");
+					setup_file.createNewFile();
 
-							FileOutputStream fos = new FileOutputStream(setup_file);
+					FileOutputStream fos = new FileOutputStream(setup_file);
 
-							byte[] buffer = new byte[1024 * 4];
-							int n = 0;
-							long total_read = 0;
-							while (-1 != (n = is.read(buffer))) {
-								fos.write(buffer, 0, n);
-								total_read += n;
-								int pourcentage = (int) (total_read * 100 / (long) entity.getContentLength());
-								double progress = (double) pourcentage / 100;
-								Platform.runLater(new Runnable() {
-									@Override
-									public void run() {
-										((LoginInterface) Interface.LOGIN).getProgressbar().setProgress(progress);
-										((LoginInterface) Interface.LOGIN).getProgressText().setText(Lang
-												.get("downloading_launcher_update", "%progress%", pourcentage + ""));
-									}
-								});
-							}
+					byte[] buffer = new byte[1024 * 4];
+					int n = 0;
+					long total_read = 0;
+					while (-1 != (n = is.read(buffer))) {
+						fos.write(buffer, 0, n);
+						total_read += n;
+						int pourcentage = (int) (total_read * 100 / (long) entity.getContentLength());
+						double progress = (double) pourcentage / 100;
+					}
 
-							is.close();
-							fos.close();
+					is.close();
+					fos.close();
 
 							Process process = new ProcessBuilder(setup_file.getPath()).start();
 							Platform.runLater(new Runnable() {
@@ -247,7 +243,7 @@ public class LauncherApplication extends Application {
 			}
 			try {
 				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(new URL("http://77.144.207.27/games/backdoor/game.php").openStream(),
+						new InputStreamReader(new URL("https://isotope-studio.fr/games/backdoor/game.php").openStream(),
 								Charset.forName("UTF-8")));
 				String json = "";
 				String line = null;
@@ -270,7 +266,7 @@ public class LauncherApplication extends Application {
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					Updater updater = new Updater("http://77.144.207.27/games/backdoor/");
+					Updater updater = new Updater("https://isotope-studio.fr/games/backdoor/");
 					updater.setListener(new IUpdater() {
 
 						@Override
@@ -286,20 +282,10 @@ public class LauncherApplication extends Application {
 						public void downloadFile(File file, long file_size) {
 						}
 					});
+					((LoginInterface) Interface.LOGIN).getLoginButton().setDisable(true);
 					if (updater.start(backdoor_directory)) {
 						extractUpdate(new File(backdoor_directory, "latest"));
-						try {
-							launchGame();
-						} catch (IOException e) {
-							Platform.runLater(new Runnable() {
-								@Override
-								public void run() {
-									LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR, "",
-											Lang.get("game_launch_failed"));
-								}
-							});
-							e.printStackTrace();
-						}
+						launchGame();
 					} else {
 						Platform.runLater(new Runnable() {
 							@Override
@@ -332,19 +318,14 @@ public class LauncherApplication extends Application {
 				}
 			}).start();
 		} else {
-			try {
-				launchGame();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			launchGame();
 		}
 	}
-	
+
 	public static News[] news() {
 		try {
-			BufferedReader reader = new BufferedReader(
-					new InputStreamReader(new URL("http://77.144.207.27/server/api/news.php").openStream(),
-							Charset.forName("UTF-8")));
+			BufferedReader reader = new BufferedReader(new InputStreamReader(
+					new URL(IsotopeStudioAPI.API_URL + "/news.php").openStream(), Charset.forName("UTF-8")));
 			String json = "";
 			String line = null;
 			while ((line = reader.readLine()) != null) {
@@ -361,8 +342,8 @@ public class LauncherApplication extends Application {
 	}
 
 	public static void setAuthentification(HashMap<String, Object> informations) {
-		LauncherApplication.user = new User("" + informations.get("username"), "" + informations.get("email"),
-				"" + informations.get("token"));
+		LauncherApplication.user = new User("" + informations.get("uuid"), "" + informations.get("username"),
+				"" + informations.get("email"), "" + informations.get("token"));
 		LauncherSettings settings = LauncherSettings.getSettings();
 		if (((LoginInterface) Interface.LOGIN).getSaveAuthCheckbox().isSelected()) {
 			settings.email = LauncherApplication.user.getEmail();
@@ -395,55 +376,45 @@ public class LauncherApplication extends Application {
 		((LoginInterface) Interface.LOGIN).getLoginButton().setText(Lang.get("login"));
 	}
 
-	public static void launchGame() throws IOException {
-		File backdoor_directory = new File(localDirectory(), "games/backdoor");
-		ProcessBuilder builder = new ProcessBuilder(new String[] { "java", "-jar", "backdoor.jar" });
-		builder.directory(backdoor_directory);
+	public static void launchGame() {
 		Platform.runLater(new Runnable() {
 			@Override
 			public void run() {
-				LauncherApplication.APPLICATION.getLauncherFrame().stage.setOpacity(0D);
-			}
-		});
-		Process process = builder.start();
+				File backdoor_directory = new File(localDirectory(), "games/backdoor");
+				System.out.println(user.toJson());
+				ProcessBuilder builder = new ProcessBuilder(
+						new String[] { "java", "-jar", "backdoor.jar", "email=" + user.getEmail(), "token="+user.getToken() });
+				builder.directory(backdoor_directory);
+				LauncherApplication.APPLICATION.getLauncherFrame().stage.close();
+				Process process;
+				try {
+					process = builder.start();
 
-		BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+					BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
-		String line;
-		while ((line = reader.readLine()) != null) {
-			System.out.println(line);
-		}
+					String line;
+						while ((line = reader.readLine()) != null) {
+							System.out.println(line);
+						}
 
-		Platform.runLater(new Runnable() {
-			@Override
-			public void run() {
-				((LoginInterface) Interface.LOGIN).getLoginButton().setDisable(false);
-			}
-		});
+					((LoginInterface) Interface.LOGIN).getLoginButton().setDisable(false);
 
-		try {
-			int code = process.waitFor();
-			Platform.runLater(new Runnable() {
-				@Override
-				public void run() {
-					LauncherApplication.APPLICATION.getLauncherFrame().stage.setOpacity(1D);
+						int code = process.waitFor();
+
+						LauncherApplication.APPLICATION.getLauncherFrame().stage.show();
+
+						if (code == IsotopeStudioAPI.EXIT_CODE_CRASH) {
+							LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR, "",
+									Lang.get("game_launch_failed"));
+						}
+
+						if (code == IsotopeStudioAPI.EXIT_CODE_RESTART) {
+							launchGame();
+						}
+				} catch (IOException | InterruptedException e) {
+					e.printStackTrace();
 				}
-			});
-
-			if (code == IsotopeStudioAPI.EXIT_CODE_CRASH) {
-				Platform.runLater(new Runnable() {
-					@Override
-					public void run() {
-						LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR, "",
-								Lang.get("game_crash"));
-					}
-				});
 			}
-			if (code == IsotopeStudioAPI.EXIT_CODE_RESTART) {
-				launchGame();
-			}
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		});
 	}
 }
