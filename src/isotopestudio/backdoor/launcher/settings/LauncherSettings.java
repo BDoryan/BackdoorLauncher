@@ -23,6 +23,8 @@ public class LauncherSettings {
 	public String email;
 	public String token;
 	
+	public boolean snapshot_enable = false;
+	
 	public static File getFileLauncherSettings() {
 		return new File(LauncherApplication.localDirectory(), NAME);
 	}

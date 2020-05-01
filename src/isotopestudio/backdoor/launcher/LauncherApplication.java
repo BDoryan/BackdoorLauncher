@@ -46,7 +46,7 @@ import javafx.stage.Stage;
 
 public class LauncherApplication extends Application {
 
-	public static final String APP_VERSION = "1.0.3";
+	public static final String APP_VERSION = "1.0.4";
 
 	public static LauncherApplication APPLICATION;
 	public static Logger LOGGER;
@@ -210,7 +210,7 @@ public class LauncherApplication extends Application {
 		return null;
 	}
 
-	public static void launch(User user) {
+	public static void launch(User user, boolean snapshot) {
 		Platform.runLater(new Runnable() {
 			@Override
 			public void run() {
@@ -219,6 +219,11 @@ public class LauncherApplication extends Application {
 		});
 		File backdoor_directory = new File(localDirectory(), "games/backdoor");
 
+		LauncherSettings settings = LauncherSettings.getSettings();
+		settings.snapshot_enable = snapshot;
+		settings.save();
+		
+		
 		boolean has_update = false;
 		if (!backdoor_directory.exists()) {
 			backdoor_directory.mkdirs();
@@ -243,13 +248,14 @@ public class LauncherApplication extends Application {
 			}
 			try {
 				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(new URL("https://isotope-studio.fr/games/backdoor/game.php").openStream(),
+						new InputStreamReader(new URL("https://isotope-studio.fr/games/backdoor/game.php?target="+(snapshot ? "snapshot" : "release")).openStream(),
 								Charset.forName("UTF-8")));
 				String json = "";
 				String line = null;
 				while ((line = reader.readLine()) != null) {
 					json += line;
 				}
+				System.out.println(json);
 				Game backdoor_info = Game.fromJson(json);
 				if (!properties.containsKey("version")
 						|| !properties.get("version").equals(backdoor_info.getVersion())) {
@@ -266,7 +272,7 @@ public class LauncherApplication extends Application {
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					Updater updater = new Updater("https://isotope-studio.fr/games/backdoor/");
+					Updater updater = new Updater("https://isotope-studio.fr/games/backdoor/"+(snapshot ? "snapshot" : "release")+"/");
 					updater.setListener(new IUpdater() {
 
 						@Override
@@ -290,8 +296,8 @@ public class LauncherApplication extends Application {
 						Platform.runLater(new Runnable() {
 							@Override
 							public void run() {
-								LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR, "",
-										Lang.get("game_update_failed"));
+								LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR, 
+										Lang.get("game_update_failed"), "");
 							}
 						});
 					}
@@ -404,8 +410,8 @@ public class LauncherApplication extends Application {
 						LauncherApplication.APPLICATION.getLauncherFrame().stage.show();
 
 						if (code == IsotopeStudioAPI.EXIT_CODE_CRASH) {
-							LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR, "",
-									Lang.get("game_launch_failed"));
+							LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR,
+									Lang.get("game_launch_failed"), "");
 						}
 
 						if (code == IsotopeStudioAPI.EXIT_CODE_RESTART) {

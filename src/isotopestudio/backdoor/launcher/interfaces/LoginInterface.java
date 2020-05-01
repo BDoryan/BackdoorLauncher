@@ -51,6 +51,7 @@ public class LoginInterface extends AnchorPane implements Interface {
 	private JFXTextField email_field;
 	private JFXPasswordField password_field;
 	private JFXCheckBox stay_connected_checkbox;
+	private JFXCheckBox snapshot_enable_checkbox;
 
 	private JFXProgressBar progressbar;
 
@@ -83,7 +84,7 @@ public class LoginInterface extends AnchorPane implements Interface {
 		AnchorPane.setTopAnchor(this.login_pane, 0D);
 		AnchorPane.setBottomAnchor(this.login_pane, 0D);
 
-		VBox vbox = new VBox(40);
+		VBox vbox = new VBox(10);
 		vbox.setAlignment(Pos.CENTER);
 		vbox.setMaxWidth(150);
 
@@ -114,6 +115,7 @@ public class LoginInterface extends AnchorPane implements Interface {
 		email_field = new JFXTextField();
 		email_field.setMinHeight(20D);
 		email_field.setMaxWidth(280);
+		email_field.setPadding(new Insets(30, 0,0,0));
 		email_field.setFont(email_field.getFont().font(16D));
 		email_field.setPromptText(Lang.get("email"));
 
@@ -122,6 +124,7 @@ public class LoginInterface extends AnchorPane implements Interface {
 		password_field = new JFXPasswordField();
 		password_field.setMinHeight(20D);
 		password_field.setMaxWidth(280);
+		password_field.setPadding(new Insets(30, 0,0,0));
 		password_field.setFont(password_field.getFont().font(16D));
 		password_field.setPromptText(Lang.get("password"));
 
@@ -129,14 +132,21 @@ public class LoginInterface extends AnchorPane implements Interface {
 
 		stay_connected_checkbox = new JFXCheckBox(Lang.get("stay_connected"));
 		stay_connected_checkbox.setFont(stay_connected_checkbox.getFont().font(16D));
+		vbox.setMargin(stay_connected_checkbox, new Insets(30, 0, 0, 0));
 
 		vbox.getChildren().add(stay_connected_checkbox);
+
+		snapshot_enable_checkbox = new JFXCheckBox(Lang.get("enable_snapshot"));
+		snapshot_enable_checkbox.setFont(snapshot_enable_checkbox.getFont().font(16D));
+
+		vbox.getChildren().add(snapshot_enable_checkbox);
 
 		login_button = new JFXButton(Lang.get("login"));
 		login_button.setMinHeight(60);
 		login_button.setMinWidth(240);
 		login_button.setFont(ResourceManager.getFont(18));
 		login_button.setEffect(new DropShadow());
+		vbox.setMargin(login_button, new Insets(30, 0, 0, 0));
 		login_button.setOnMouseClicked(new EventHandler<MouseEvent>() {
 
 			private boolean in_process = false;
@@ -152,7 +162,7 @@ public class LoginInterface extends AnchorPane implements Interface {
 					@Override
 					public void run() {
 						if (LauncherApplication.isAuthentified()) {
-							LauncherApplication.launch(LauncherApplication.getUser());
+							LauncherApplication.launch(LauncherApplication.getUser(), snapshot_enable_checkbox.isSelected());
 						} else {
 							in_process = true;
 
@@ -273,6 +283,7 @@ public class LoginInterface extends AnchorPane implements Interface {
 			@Override
 			public void run() {
 				LauncherSettings settings = LauncherSettings.getSettings();
+				snapshot_enable_checkbox.setSelected(settings.snapshot_enable);
 				if (settings.email != null && !settings.email.equalsIgnoreCase("") && settings.token != null
 						&& !settings.token.equalsIgnoreCase("")) {
 
