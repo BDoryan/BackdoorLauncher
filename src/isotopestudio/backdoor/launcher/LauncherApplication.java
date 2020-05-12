@@ -29,7 +29,6 @@ import doryanbessiere.isotopestudio.api.Game;
 import doryanbessiere.isotopestudio.api.IsotopeStudioAPI;
 import doryanbessiere.isotopestudio.api.authentification.User;
 import doryanbessiere.isotopestudio.api.news.News;
-import doryanbessiere.isotopestudio.api.updater.IUpdater;
 import doryanbessiere.isotopestudio.api.updater.Updater;
 import doryanbessiere.isotopestudio.commons.GsonInstance;
 import doryanbessiere.isotopestudio.commons.logger.Logger;
@@ -46,7 +45,7 @@ import javafx.stage.Stage;
 
 public class LauncherApplication extends Application {
 
-	public static final String APP_VERSION = "1.0.4";
+	public static final String APP_VERSION = "1.0.5";
 
 	public static LauncherApplication APPLICATION;
 	public static Logger LOGGER;
@@ -269,57 +268,53 @@ public class LauncherApplication extends Application {
 		}
 
 		if (has_update) {
+			System.out.println("has update");
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					Updater updater = new Updater("https://isotope-studio.fr/games/backdoor/"+(snapshot ? "snapshot" : "release")+"/");
-					updater.setListener(new IUpdater() {
-
+					Updater updater = new Updater("https://isotope-studio.fr/games/backdoor/"+(snapshot ? "snapshot" : "release")+"/"){
+						
 						@Override
-						public void progress(long total_read, long total_size) {
+						public void checkUpdate() {
+							((LoginInterface) Interface.LOGIN).getProgressText()
+							.setText(Lang.get("checking_update",  "%progress%", "(0/0) 0%"));
+						}
+						
+						@Override
+						public void fileCheckProgress(int count, int max_count) {
+							int pourcentage = (int) (count * 100 / (long) max_count);
+							double progress = (double) pourcentage / 100;
+							((LoginInterface) Interface.LOGIN).getProgressbar().setProgress(progress);
+							((LoginInterface) Interface.LOGIN).getProgressText()
+							.setText(Lang.get("checking_update", "%progress%", "("+count+"/"+max_count+") "+pourcentage+"%"));
+						}
+						
+						@Override
+						public void fileDownloadProgress(long total_read, long total_size) {
 							int pourcentage = (int) (total_read * 100 / (long) total_size);
 							double progress = (double) pourcentage / 100;
 							((LoginInterface) Interface.LOGIN).getProgressbar().setProgress(progress);
 							((LoginInterface) Interface.LOGIN).getProgressText()
-									.setText(Lang.get("downloading_game_update", "%progress%", pourcentage + ""));
+							.setText(Lang.get("downloading_game_update", "%progress%", pourcentage + ""));
 						}
-
-						@Override
-						public void downloadFile(File file, long file_size) {
-						}
-					});
+					};
 					((LoginInterface) Interface.LOGIN).getLoginButton().setDisable(true);
-					if (updater.start(backdoor_directory)) {
-						extractUpdate(new File(backdoor_directory, "latest"));
-						launchGame();
-					} else {
-						Platform.runLater(new Runnable() {
-							@Override
-							public void run() {
-								LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR, 
-										Lang.get("game_update_failed"), "");
-							}
-						});
-					}
-				}
-
-				private void extractUpdate(File directory) {
-					for (File file : directory.listFiles()) {
-						String file_path = file.getPath();
-						String target_path = file_path.substring(file_path.lastIndexOf("latest") + 6 /* text length */,
-								file_path.length());
-						System.out.println(target_path);
-						File target = new File(backdoor_directory, target_path);
-						if (file.isDirectory()) {
-							target.mkdirs();
-							extractUpdate(file);
+					try {
+						if (updater.update(backdoor_directory)) {
+							launchGame();
 						} else {
-							if (target.exists()) {
-								target.delete();
-							}
-							// System.out.println(file.getPath() + " -> " + target.getPath());
-							file.renameTo(target);
+							Platform.runLater(new Runnable() {
+								@Override
+								public void run() {
+									LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR, 
+											Lang.get("game_update_failed"), "");
+								}
+							});
 						}
+					} catch (MalformedURLException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
 				}
 			}).start();

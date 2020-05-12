@@ -2,10 +2,9 @@ package isotopestudio.backdoor.launcher;
 
 import java.awt.MouseInfo;
 
-import com.jfoenix.controls.JFXButton;
-
 import isotopestudio.backdoor.launcher.interfaces.Interface;
 import isotopestudio.backdoor.launcher.popup.PopupType;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -17,11 +16,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundImage;
-import javafx.scene.layout.BackgroundPosition;
-import javafx.scene.layout.BackgroundRepeat;
-import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -30,6 +24,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.WindowEvent;
 
 public class LauncherFrame {
 
@@ -281,6 +276,12 @@ public class LauncherFrame {
 		this.stage.setX((primScreenBounds.getWidth() / 2) - (this.width / 2));
 		this.stage.setY((primScreenBounds.getHeight() / 2) - (this.height / 2));
 
+		this.stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent t) {
+                Platform.exit();
+            }
+        });
 		this.stage.show();
 
 		setTitlebar();

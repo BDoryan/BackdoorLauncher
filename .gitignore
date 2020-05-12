@@ -1,5 +1,4 @@
-/target/
-/bin/
-/target/
-/.settings/
-.classpath
+target/*
+!target/langs/
+!target/changelogs.log
+.settings/
