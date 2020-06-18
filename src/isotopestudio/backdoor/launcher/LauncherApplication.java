@@ -45,7 +45,7 @@ import javafx.stage.Stage;
 
 public class LauncherApplication extends Application {
 
-	public static final String APP_VERSION = "1.0.5";
+	public static final String APP_VERSION = "1.0.6";
 
 	public static LauncherApplication APPLICATION;
 	public static Logger LOGGER;
@@ -121,6 +121,9 @@ public class LauncherApplication extends Application {
 						total_read += n;
 						int pourcentage = (int) (total_read * 100 / (long) entity.getContentLength());
 						double progress = (double) pourcentage / 100;
+						((LoginInterface) Interface.LOGIN).getProgressbar().setProgress(progress);
+						((LoginInterface) Interface.LOGIN).getProgressText()
+						.setText(Lang.get("downloading_game_update", "%progress%", pourcentage + ""));
 					}
 
 					is.close();

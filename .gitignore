@@ -2,3 +2,4 @@ target/*
 !target/langs/
 !target/changelogs.log
 .settings/
+/target/
