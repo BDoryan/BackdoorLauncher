@@ -1,5 +1,5 @@
-## Backdoor Game by IsotopeStudio
-Developper par Doryan Bessiere
+## Backdoor Launcher by IsotopeStudio
+Developpé par Doryan Bessiere
 
 ## Licence
 Tout droit réservé au créateur
