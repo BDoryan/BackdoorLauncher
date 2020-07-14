@@ -45,7 +45,7 @@ import javafx.stage.Stage;
 
 public class LauncherApplication extends Application {
 
-	public static final String APP_VERSION = "1.0.6";
+	public static final String APP_VERSION = "1.0.7";
 
 	public static LauncherApplication APPLICATION;
 	public static Logger LOGGER;
@@ -303,7 +303,7 @@ public class LauncherApplication extends Application {
 					};
 					((LoginInterface) Interface.LOGIN).getLoginButton().setDisable(true);
 					try {
-						if (updater.update(backdoor_directory)) {
+						if (updater.update(backdoor_directory, false)) {
 							launchGame();
 						} else {
 							Platform.runLater(new Runnable() {
@@ -407,6 +407,8 @@ public class LauncherApplication extends Application {
 
 						LauncherApplication.APPLICATION.getLauncherFrame().stage.show();
 
+						
+						
 						if (code == IsotopeStudioAPI.EXIT_CODE_CRASH) {
 							LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR,
 									Lang.get("game_launch_failed"), "");

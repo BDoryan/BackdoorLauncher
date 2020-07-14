@@ -17,8 +17,8 @@ import com.jfoenix.controls.JFXTextField;
 
 import doryanbessiere.isotopestudio.api.IsotopeStudioAPI;
 import doryanbessiere.isotopestudio.api.authentification.AuthClient;
-import doryanbessiere.isotopestudio.api.authentification.Response;
 import doryanbessiere.isotopestudio.api.news.News;
+import doryanbessiere.isotopestudio.api.web.Response;
 import isotopestudio.backdoor.launcher.LauncherApplication;
 import isotopestudio.backdoor.launcher.ResourceManager;
 import isotopestudio.backdoor.launcher.lang.Lang;
