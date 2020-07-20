@@ -12,7 +12,9 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.text.DecimalFormat;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Properties;
 
 import javax.swing.JOptionPane;
@@ -45,7 +47,7 @@ import javafx.stage.Stage;
 
 public class LauncherApplication extends Application {
 
-	public static final String APP_VERSION = "1.0.7";
+	public static final String APP_VERSION = "1.0.9";
 
 	public static LauncherApplication APPLICATION;
 	public static Logger LOGGER;
@@ -98,36 +100,37 @@ public class LauncherApplication extends Application {
 									((LoginInterface) Interface.LOGIN).getPasswordField().setDisable(true);
 								}
 							});
-					HttpClient client = HttpClientBuilder.create().build();
-					HttpGet request = new HttpGet(
-							"https://isotope-studio.fr/launcher/BackdoorLauncherSetup.exe");
-					HttpResponse response = client.execute(request);
-					HttpEntity entity = response.getEntity();
+							HttpClient client = HttpClientBuilder.create().build();
+							HttpGet request = new HttpGet(
+									"https://isotope-studio.fr/launcher/BackdoorLauncherSetup.exe");
+							HttpResponse response = client.execute(request);
+							HttpEntity entity = response.getEntity();
 
-					InputStream is = entity.getContent();
+							InputStream is = entity.getContent();
 
-					String tempDir = System.getProperty("java.io.tmpdir");
+							String tempDir = System.getProperty("java.io.tmpdir");
 
-					File setup_file = new File(tempDir, "BackdoorLauncherSetup.exe");
-					setup_file.createNewFile();
+							File setup_file = new File(tempDir, "BackdoorLauncherSetup.exe");
+							setup_file.createNewFile();
 
-					FileOutputStream fos = new FileOutputStream(setup_file);
+							FileOutputStream fos = new FileOutputStream(setup_file);
 
-					byte[] buffer = new byte[1024 * 4];
-					int n = 0;
-					long total_read = 0;
-					while (-1 != (n = is.read(buffer))) {
-						fos.write(buffer, 0, n);
-						total_read += n;
-						int pourcentage = (int) (total_read * 100 / (long) entity.getContentLength());
-						double progress = (double) pourcentage / 100;
-						((LoginInterface) Interface.LOGIN).getProgressbar().setProgress(progress);
-						((LoginInterface) Interface.LOGIN).getProgressText()
-						.setText(Lang.get("downloading_game_update", "%progress%", pourcentage + ""));
-					}
+							byte[] buffer = new byte[1024 * 4];
+							int n = 0;
+							long total_read = 0;
+							while (-1 != (n = is.read(buffer))) {
+								fos.write(buffer, 0, n);
+								total_read += n;
+								int pourcentage = (int) (total_read * 100 / (long) entity.getContentLength());
+								double progress = (double) pourcentage / 100;
+								((LoginInterface) Interface.LOGIN).getProgressbar().setProgress(progress);
+								((LoginInterface) Interface.LOGIN).getProgressText()
+										.setText(Lang.get("downloading_launcher_update", "%progress%", pourcentage + "",
+												"%status%", readableFileSize(setup_file.length() - total_read)));
+							}
 
-					is.close();
-					fos.close();
+							is.close();
+							fos.close();
 
 							Process process = new ProcessBuilder(setup_file.getPath()).start();
 							Platform.runLater(new Runnable() {
@@ -224,8 +227,7 @@ public class LauncherApplication extends Application {
 		LauncherSettings settings = LauncherSettings.getSettings();
 		settings.snapshot_enable = snapshot;
 		settings.save();
-		
-		
+
 		boolean has_update = false;
 		if (!backdoor_directory.exists()) {
 			backdoor_directory.mkdirs();
@@ -250,8 +252,8 @@ public class LauncherApplication extends Application {
 			}
 			try {
 				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(new URL("https://isotope-studio.fr/games/backdoor/game.php?target="+(snapshot ? "snapshot" : "release")).openStream(),
-								Charset.forName("UTF-8")));
+						new InputStreamReader(new URL("https://isotope-studio.fr/games/backdoor/game.php?target="
+								+ (snapshot ? "snapshot" : "release")).openStream(), Charset.forName("UTF-8")));
 				String json = "";
 				String line = null;
 				while ((line = reader.readLine()) != null) {
@@ -275,33 +277,120 @@ public class LauncherApplication extends Application {
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					Updater updater = new Updater("https://isotope-studio.fr/games/backdoor/"+(snapshot ? "snapshot" : "release")+"/"){
-						
+					((LoginInterface) Interface.LOGIN).getLoginButton().setDisable(true);
+
+					String os = "";
+					String arch = System.getProperty("os.arch");
+					String current_os = System.getProperty("os.name", "generic").toLowerCase(Locale.ENGLISH);
+					if ((current_os.indexOf("mac") >= 0) || (current_os.indexOf("darwin") >= 0)) {
+						os = "macos";
+					} else if (current_os.indexOf("win") >= 0) {
+						os = "windows";
+					} else if (current_os.indexOf("nux") >= 0) {
+						os = "linux";
+					}
+
+					if (os.equals("windows")) {
+						arch = System.getProperty("sun.arch.data.model").replace("32", "86");
+					}
+
+					Updater updater = new Updater("https://isotope-studio.fr/games/backdoor/"
+							+ (snapshot ? "snapshot" : "release") + "/librairies/" + os + "/" + arch) {
+
 						@Override
 						public void checkUpdate() {
 							((LoginInterface) Interface.LOGIN).getProgressText()
-							.setText(Lang.get("checking_update",  "%progress%", "(0/0) 0%"));
+									.setText(Lang.get("checking_update", "%progress%", "(0/0) 0%"));
 						}
-						
+
 						@Override
 						public void fileCheckProgress(int count, int max_count) {
-							int pourcentage = (int) (count * 100 / (long) max_count);
+							int pourcentage = (int) (count * 100 / max_count);
 							double progress = (double) pourcentage / 100;
-							((LoginInterface) Interface.LOGIN).getProgressbar().setProgress(progress);
-							((LoginInterface) Interface.LOGIN).getProgressText()
-							.setText(Lang.get("checking_update", "%progress%", "("+count+"/"+max_count+") "+pourcentage+"%"));
+
+							Platform.runLater(new Runnable() {
+								@Override
+								public void run() {
+									((LoginInterface) Interface.LOGIN).getProgressbar().setProgress(progress);
+									((LoginInterface) Interface.LOGIN).getProgressText()
+											.setText(Lang.get("checking_update", "%progress%",
+													"(" + count + "/" + max_count + ") " + pourcentage + "%"));
+								}
+							});
 						}
-						
+
 						@Override
 						public void fileDownloadProgress(long total_read, long total_size) {
-							int pourcentage = (int) (total_read * 100 / (long) total_size);
-							double progress = (double) pourcentage / 100;
-							((LoginInterface) Interface.LOGIN).getProgressbar().setProgress(progress);
-							((LoginInterface) Interface.LOGIN).getProgressText()
-							.setText(Lang.get("downloading_game_update", "%progress%", pourcentage + ""));
+							Platform.runLater(new Runnable() {
+								@Override
+								public void run() {
+									int pourcentage = (int) (total_read * 100 / total_size);
+									double progress = (double) pourcentage / 100;
+									((LoginInterface) Interface.LOGIN).getProgressbar().setProgress(progress);
+									((LoginInterface) Interface.LOGIN).getProgressText()
+											.setText(Lang.get("downloading_libraries_update", "%progress%",
+													pourcentage + "", "%status%",
+													readableFileSize(total_size - total_read)));
+									System.out.println(
+											pourcentage + " - " + progress + " - " + total_read + "/" + total_size);
+								}
+							});
 						}
 					};
-					((LoginInterface) Interface.LOGIN).getLoginButton().setDisable(true);
+					try {
+						File libs_directory = new File(backdoor_directory, "libs");
+						if (!libs_directory.exists()) {
+							libs_directory.mkdirs();
+						}
+						if (!updater.update(libs_directory, true))
+							return;
+					} catch (MalformedURLException e1) {
+						e1.printStackTrace();
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+
+					updater = new Updater(
+							"https://isotope-studio.fr/games/backdoor/" + (snapshot ? "snapshot" : "release") + "/") {
+
+						@Override
+						public void checkUpdate() {
+							((LoginInterface) Interface.LOGIN).getProgressText()
+									.setText(Lang.get("checking_update", "%progress%", "(0/0) 0%"));
+						}
+
+						@Override
+						public void fileCheckProgress(int count, int max_count) {
+							Platform.runLater(new Runnable() {
+								@Override
+								public void run() {
+									int pourcentage = (int) (count * 100 / max_count);
+									double progress = (double) pourcentage / 100;
+									((LoginInterface) Interface.LOGIN).getProgressbar().setProgress(progress);
+									((LoginInterface) Interface.LOGIN).getProgressText()
+											.setText(Lang.get("checking_update", "%progress%",
+													"(" + count + "/" + max_count + ") " + pourcentage + "%"));
+								}
+							});
+						}
+
+						@Override
+						public void fileDownloadProgress(long total_read, long total_size) {
+							Platform.runLater(new Runnable() {
+								@Override
+								public void run() {
+									int pourcentage = (int) (total_read * 100 / total_size);
+									double progress = (double) pourcentage / 100;
+									((LoginInterface) Interface.LOGIN).getProgressbar().setProgress(progress);
+									((LoginInterface) Interface.LOGIN).getProgressText()
+											.setText(Lang.get("downloading_game_update", "%progress%", pourcentage + "",
+													"%status%", readableFileSize(total_size - total_read)));
+									System.out.println(
+											pourcentage + " - " + progress + " - " + total_read + "/" + total_size);
+								}
+							});
+						}
+					};
 					try {
 						if (updater.update(backdoor_directory, false)) {
 							launchGame();
@@ -309,7 +398,7 @@ public class LauncherApplication extends Application {
 							Platform.runLater(new Runnable() {
 								@Override
 								public void run() {
-									LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR, 
+									LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR,
 											Lang.get("game_update_failed"), "");
 								}
 							});
@@ -324,6 +413,14 @@ public class LauncherApplication extends Application {
 		} else {
 			launchGame();
 		}
+	}
+
+	public static String readableFileSize(long size) {
+		if (size <= 0)
+			return "0";
+		final String[] units = new String[] { "B", "kB", "MB", "GB", "TB" };
+		int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
+		return new DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
 	}
 
 	public static News[] news() {
@@ -385,9 +482,27 @@ public class LauncherApplication extends Application {
 			@Override
 			public void run() {
 				File backdoor_directory = new File(localDirectory(), "games/backdoor");
+
+				String mainClass = "isotopestudio.backdoor.game.BackdoorGame";
+
+				File game_properties_file = new File(backdoor_directory, "game.properties");
+				Properties game_properties = new Properties();
+
+				if (game_properties_file.exists()) {
+					try {
+						game_properties.load(new FileInputStream(game_properties_file));
+						mainClass = game_properties.getProperty("mainClass");
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+
 				System.out.println(user.toJson());
 				ProcessBuilder builder = new ProcessBuilder(
-						new String[] { "java", "-jar", "backdoor.jar", "email=" + user.getEmail(), "token="+user.getToken() });
+						new String[] { "java", "-cp", "\"backdoor.jar;libs/*\"", mainClass,
+								"email=" + user.getEmail(), "token=" + user.getToken() });
 				builder.directory(backdoor_directory);
 				LauncherApplication.APPLICATION.getLauncherFrame().stage.close();
 				Process process;
@@ -397,26 +512,24 @@ public class LauncherApplication extends Application {
 					BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
 					String line;
-						while ((line = reader.readLine()) != null) {
-							System.out.println(line);
-						}
+					while ((line = reader.readLine()) != null) {
+						System.out.println(line);
+					}
 
 					((LoginInterface) Interface.LOGIN).getLoginButton().setDisable(false);
 
-						int code = process.waitFor();
+					int code = process.waitFor();
 
-						LauncherApplication.APPLICATION.getLauncherFrame().stage.show();
+					LauncherApplication.APPLICATION.getLauncherFrame().stage.show();
 
-						
-						
-						if (code == IsotopeStudioAPI.EXIT_CODE_CRASH) {
-							LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR,
-									Lang.get("game_launch_failed"), "");
-						}
+					if (code == IsotopeStudioAPI.EXIT_CODE_CRASH) {
+						LauncherApplication.APPLICATION.getLauncherFrame().popup(PopupType.ERROR,
+								Lang.get("game_launch_failed"), "");
+					}
 
-						if (code == IsotopeStudioAPI.EXIT_CODE_RESTART) {
-							launchGame();
-						}
+					if (code == IsotopeStudioAPI.EXIT_CODE_RESTART) {
+						launchGame();
+					}
 				} catch (IOException | InterruptedException e) {
 					e.printStackTrace();
 				}
