@@ -285,7 +285,7 @@ public class LauncherApplication extends Application {
 					if ((current_os.indexOf("mac") >= 0) || (current_os.indexOf("darwin") >= 0)) {
 						os = "macos";
 					} else if (current_os.indexOf("win") >= 0) {
-						os = "windows";
+						os = "windows"; 
 					} else if (current_os.indexOf("nux") >= 0) {
 						os = "linux";
 					}
